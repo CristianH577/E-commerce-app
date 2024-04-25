@@ -1,0 +1,26 @@
+add
+    client
+        limpiar select 
+
+show
+    products
+        sort
+    sells
+        revisar cleanUnknownSells
+        agregar subtotal 
+    tickets
+        agregar subtotal y total
+
+stats
+    historial de cambios para alguno
+    usar next ui de fechas
+
+
+agregar try catch a los map
+conciderar cambios de historial a la hora de guardar tickets y ventas
+
+
+
+mysql
+    relacionar tablas
+    sist de seguridad antes de eliminar
