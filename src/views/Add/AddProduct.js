@@ -42,35 +42,41 @@ function AddProduct() {
     }
 
     const handleFiles = (e) => {
-        if (e.target.files.length === 0) return false
-
-        if (e.target.files.length > 6) {
-            alert("Maximo 6 archivos")
-            document.querySelector('#input_imgs').value = ''
-            return false
-        }
-
+        var clean = false
         const new_preview = []
-        for (const file of e.target.files) {
-            if (file.type && !file.type.startsWith('image/')) {
-                alert("Solo se permiten imagenes")
-                document.querySelector('#input_imgs').value = ''
-                return false
-            }
 
-            const reader = new FileReader()
-            reader.onload = function (e) {
-                new_preview.push(e.target.result)
+        if (e.target.files.length === 0) {
+            clean = true
+        } else if (e.target.files.length > 6) {
+            alert("Maximo 6 archivos")
+            clean = true
+        } else {
+            for (const file of e.target.files) {
+                if (file.type && !file.type.startsWith('image/')) {
+                    alert("Solo se permiten imagenes")
+                    clean = true
+                    break
+                }
+
+                const reader = new FileReader()
+                reader.onload = function (e) {
+                    new_preview.push(e.target.result)
+                }
+                reader.readAsDataURL(file)
             }
-            reader.readAsDataURL(file)
         }
 
-        setImgs(e.target.files)
+        if (clean) {
+            document.querySelector('#input_imgs').value = ''
+            setImgsPrev(false)
+        } else {
+            setImgs(e.target.files)
 
-        setImgsPrev(false)
-        setTimeout(() => {
-            setImgsPrev(new_preview)
-        }, 300)
+            setImgsPrev(false)
+            setTimeout(() => {
+                setImgsPrev(new_preview)
+            }, 300)
+        }
     }
 
     const handleReset = () => {

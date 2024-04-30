@@ -1,23 +1,25 @@
-add
-    client
-        limpiar select 
+
 
 show
     products
         sort
+        error menor  al renderizar por primera vez
     sells
-        revisar cleanUnknownSells
         agregar subtotal 
     tickets
         agregar subtotal y total
+        no se actualiza el getall al eliminar tickets vacios
+
 
 stats
     historial de cambios para alguno
     usar next ui de fechas
+        
 
 
-agregar try catch a los map
 conciderar cambios de historial a la hora de guardar tickets y ventas
+configurar paginacion para el resize
+delete: filtrar data y no volver a hacer busqueda
 
 
 

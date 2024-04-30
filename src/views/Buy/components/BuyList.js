@@ -9,7 +9,7 @@ import product_unknown from '../../../assets/imgs/product_unknown.svg'
 import unit_values from '../../../assets/files/unit_values.json'
 
 
-function BuyList({ buyList, setBuyList, client, loading, rowImgs, handleBuy, noStock }) {
+function BuyList({ buyList, setBuyList, client, loading, rowImgs, handleBuy, noStock, setNoStock }) {
 
     const columns = [
         {
@@ -66,7 +66,11 @@ function BuyList({ buyList, setBuyList, client, loading, rowImgs, handleBuy, noS
 
         const new_quantity = buyList[id].quantity + add
 
-        if (new_quantity <= 0) {
+        if (action === 'minus' && noStock.includes(id)) {
+            if (new_quantity <= new_list[id].stock) setNoStock(noStock.filter(e => e !== id))
+        }
+
+        if (new_quantity < 0) {
             delete new_list[id]
         } else {
             new_list[id] = {
@@ -79,23 +83,28 @@ function BuyList({ buyList, setBuyList, client, loading, rowImgs, handleBuy, noS
         setBuyList(new_list)
     }
 
-    const renderCell = (item, columnKey) => {
-        switch (columnKey) {
+    const renderCell = (item, key) => {
+        const val = item[key] || ''
+        switch (key) {
             case 'actions':
                 return <div className="flex gap-2 justify-center ">
-                    <MdDeleteOutline
-                        size={25}
-                        className="hover:text-danger hover:cursor-pointer"
-                        onClick={() => !loading && deleteFromList(item.id_product)}
-                    />
+                    <Button
+                        isIconOnly
+                        className="bg-transparent hover:text-danger"
+                        isDisabled={loading}
+                        onClick={() => deleteFromList(item.id_product || false)}
+                    >
+                        <MdDeleteOutline size={25} />
+                    </Button>
                 </div>
             case 'price':
+            case 'subtotal':
                 return <div className="text-center">
-                    $ {item.price}
+                    $ {val}
                 </div>
             case 'quantity':
                 const rule = unit_values[item.category_product] || unit_values.default
-                var quantity = (item.quantity * rule.quantity_value)
+                var quantity = (val * rule.quantity_value)
                 if (quantity % 1 !== 0) quantity = quantity.toFixed(1)
                 const unit = rule.unit
 
@@ -104,7 +113,8 @@ function BuyList({ buyList, setBuyList, client, loading, rowImgs, handleBuy, noS
                         isIconOnly
                         variant="flat"
                         size="sm"
-                        isDisabled={loading || item.quantity === 1}
+                        isDisabled={loading || val === 0}
+                        color={(val > item.stock && val > 0) ? 'primary' : 'default'}
                         onClick={() => handleQuantity(item.id_product, 'minus')}
                     >
                         <FaMinus />
@@ -119,16 +129,12 @@ function BuyList({ buyList, setBuyList, client, loading, rowImgs, handleBuy, noS
                         isIconOnly
                         variant="flat"
                         size="sm"
-                        isDisabled={loading || item.quantity >= item.stock}
+                        isDisabled={loading || val >= item.stock}
                         onClick={() => handleQuantity(item.id_product, 'plus')}
                     >
                         <FaPlus />
                     </Button>
 
-                </div>
-            case 'subtotal':
-                return <div className="text-center">
-                    $ {item.subtotal}
                 </div>
             case 'img':
                 return <div className="flex justify-center">
@@ -145,7 +151,7 @@ function BuyList({ buyList, setBuyList, client, loading, rowImgs, handleBuy, noS
 
             default:
                 return <div className="text-center">
-                    {item[columnKey]}
+                    {val}
                 </div>
         }
     }
@@ -232,8 +238,17 @@ function BuyList({ buyList, setBuyList, client, loading, rowImgs, handleBuy, noS
                 />
 
 
-                <Tooltip content={!client.id_client && 'Definir clieznte'} color="danger" showArrow isDisabled={client.id_client}>
-                    <Button onClick={handleBuy} isDisabled={loading || !client.id_client || Object.values(buyList).length === 0}>
+                <Tooltip content={!client.id_client && 'Definir cliente'} color="danger" showArrow isDisabled={client.id_client}>
+                    <Button
+                        onClick={handleBuy}
+                        isDisabled={loading || !client.id_client || Object.values(buyList).length === 0 || noStock.length !== 0}
+                        color={(!client.id_client || Object.values(buyList).length === 0)
+                            ? 'default'
+                            : noStock.length !== 0
+                                ? 'danger'
+                                : 'success'
+                        }
+                    >
                         Comprar
                     </Button>
                 </Tooltip>

@@ -1,24 +1,25 @@
 import { useState } from "react";
-
-import { Button, Input, Link, Spinner } from "@nextui-org/react";
-import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from "@nextui-org/react";
-
-import { Form, Formik } from "formik";
-
-
 import { deleteFAPI, getFAPI, putFAPI } from "../../libs/fastapi";
 
+import { Button, Input } from "@nextui-org/react";
+import { Form, Formik } from "formik";
 
-import { IoSearch } from "react-icons/io5";
+import InputSearch from "../../components/InputSearch";
+import TableCustom from "./components/TableCustom";
+import ErrorBoundary from "../../components/ErrorBoundary";
+
 import { MdDeleteOutline } from "react-icons/md";
 import { CiEdit } from "react-icons/ci";
-import PaginationCustom from "../../components/PaginationCustom";
 
 
 
 function ShowProducts() {
 
     const columns = [
+        {
+            key: "actions",
+            label: "",
+        },
         {
             key: "id_client",
             label: "ID",
@@ -35,10 +36,6 @@ function ShowProducts() {
             key: "date",
             label: "Actualizacion",
         },
-        {
-            key: "actions",
-            label: "",
-        },
     ]
 
     const [data, setData] = useState([])
@@ -46,52 +43,68 @@ function ShowProducts() {
     const [edit, setEdit] = useState(false)
     const [loading, setLoading] = useState(false)
 
-    const getById = async (e) => {
+
+    const getData = async (e) => {
         setLoading(true)
-        if (e.id_client && e.id_client !== '') {
-            const response = await getFAPI('clients/getById/' + e.id_client)
-            if (response.bool) setData([response.value])
+
+        var url = 'getAll'
+        if (typeof e === 'object' && e.id_client && e.id_client !== '') {
+            url = 'getById/' + e.id_client
         }
+
+        const response = await getFAPI('clients/' + url)
+        if (response.bool && Array.isArray(response.value)) {
+            setData(response.value)
+        } else {
+            setData([])
+        }
+
         setLoading(false)
     }
-    const getAll = async () => {
-        setLoading(true)
-        const response = await getFAPI('clients/getAll')
-        if (response.bool) setData(response.value)
-        setLoading(false)
-    }
+
     const handleDelete = async id => {
         setLoading(true)
         await deleteFAPI('clients/delete/' + id)
-        getAll()
+        getData()
         setLoading(false)
     }
+
     const handleUpdate = async e => {
         setLoading(true)
-        const response = await putFAPI('clients/update', e)
-        if (response.bool) getAll()
+        var equal = true
+        for (const k of Object.keys(e)) {
+            if (e[k] !== edit[k]) {
+                equal = false
+                break
+            }
+        }
+
+        if (!equal) {
+            const response = await putFAPI('clients/update', e)
+            if (response.bool) getData()
+        }
 
         handleClean()
+        setLoading(false)
     }
 
     const handleClean = () => {
         document.querySelector('#form_update_client').reset()
-
         setEdit(false)
-        setLoading(false)
 
         if (window.location.hash) window.location.hash = ""
     }
 
-    const renderCell = (item, columnKey) => {
-        switch (columnKey) {
+    const renderCell = (item, key) => {
+        const val = item[key] || ''
+        switch (key) {
             case 'actions':
                 return <div className="flex gap-2 max-sm:flex-col">
                     <Button
                         isIconOnly
                         className="bg-transparent hover:text-danger"
                         isDisabled={loading}
-                        onClick={() => handleDelete(item.id_client)}
+                        onClick={() => handleDelete(item.id_client || false)}
                     >
                         <MdDeleteOutline size={25} />
                     </Button>
@@ -99,14 +112,13 @@ function ShowProducts() {
                     <Button
                         isIconOnly
                         className="bg-transparent hover:text-primary "
-                        href="#update_client"
-                        as={Link}
                         onClick={() => {
                             if (!loading) {
                                 setEdit(false)
 
                                 setTimeout(() => {
                                     setEdit(item)
+                                    document.getElementById("update_client").scrollIntoView()
                                 }, 300)
                             }
                         }}
@@ -116,12 +128,12 @@ function ShowProducts() {
                 </div>
             case 'date':
                 return <div className="min-w-36 ">
-                    {item[columnKey]}
+                    {val}
                 </div>
 
             default:
                 return <div>
-                    {item[columnKey]}
+                    {val}
                 </div>
         }
     }
@@ -130,44 +142,20 @@ function ShowProducts() {
 
     return (
         <div className="flex flex-col items-center">
-
-            <div className="flex gap-4 items-center justify-center max-sm:flex-col" >
-                <Formik
-                    initialValues={{
-                        id_client: false,
-                    }}
-                    onSubmit={values => getById(values)}
-                >
-                    {({ handleChange }) => (
-                        <Form className="flex gap-4 items-center" >
-                            <Input
-                                type='number'
-                                name="id_client"
-                                label='ID Cliente'
-                                size="sm"
-                                className="w-40"
-                                endContent={
-                                    <button type="submit" className="hover:text-warning" disabled={loading} >
-                                        <IoSearch size={28} />
-                                    </button>
-                                }
-                                onChange={handleChange}
-                            />
-                        </Form>
-                    )}
-                </Formik>
-
-                <Button onClick={getAll} isDisabled={loading}>
-                    Todos los clientes
-                </Button>
-            </div>
+            
+            <InputSearch
+                name={'id_client'}
+                label={'ID Cliente'}
+                onSubmit={getData}
+                loading={loading}
+            />
 
 
             <div id="update_client">
                 {edit && (
                     <Formik
                         initialValues={{ ...edit }}
-                        onSubmit={values => handleUpdate(values)}
+                        onSubmit={handleUpdate}
                         onReset={handleClean}
                     >
                         {({ handleChange, values }) => (
@@ -202,34 +190,18 @@ function ShowProducts() {
             </div>
 
 
-            <Table
-                aria-label="Tabla de clientes"
-                className="mt-8 max-w-[95vw]"
-                topContent={<p className="text-neutral-500">Total: {data.length} clientes</p>}
-                bottomContent={
-                    <PaginationCustom
-                        data={data}
-                        setRows={setRows}
-                        className={"flex justify-center mt-4 w-fit sm:w-full"}
-                    />
-                }
-            >
-                <TableHeader columns={columns}>
-                    {(column) => <TableColumn key={column.key}>{column.label}</TableColumn>}
-                </TableHeader>
-                <TableBody
-                    items={rows}
-                    emptyContent={!loading ? "Sin resultados" : " "}
-                    isLoading={loading}
-                    loadingContent={<Spinner label="Loading..." />}
-                >
-                    {(item) => (
-                        <TableRow key={item.id_client}>
-                            {(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}
-                        </TableRow>
-                    )}
-                </TableBody>
-            </Table>
+            <ErrorBoundary>
+                <TableCustom
+                    label={'clientes'}
+                    data={data}
+                    columns={columns}
+                    rows={rows}
+                    setRows={setRows}
+                    id_row={'id_client'}
+                    renderCell={renderCell}
+                    loading={loading}
+                />
+            </ErrorBoundary>
 
         </div >
     );

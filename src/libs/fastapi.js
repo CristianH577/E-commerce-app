@@ -143,6 +143,8 @@ export async function imgFAPI(action) {
     await client.get(action, config_get)
         .then(response => {
             const url = URL.createObjectURL(response.data)
+
+            alert.bool = true
             alert.value = url
         })
         .catch(e => analyzeError(e))
@@ -150,3 +152,35 @@ export async function imgFAPI(action) {
     return alert
 }
 
+
+export async function getProductsImgs(rows, setImgs) {
+    if (rows.length > 0) {
+        const form_data = new FormData()
+        rows.forEach(e => {
+            form_data.append('ids', e.id_product)
+        })
+
+        const response = await postFAPI('products/getListImgs', form_data)
+
+        if (response.bool && typeof response.value === 'object') {
+            const new_rowImgs = {}
+            for (const id in response.value) {
+                const list = response.value[id]
+                new_rowImgs[id] = []
+
+                await Promise.all(
+                    list.map(async name => {
+                        const src = await imgFAPI(`products/getImgByName/${id}/${name}`)
+                        if (src.bool && src.value) {
+                            new_rowImgs[id].push({
+                                name: name,
+                                src: src.value
+                            })
+                        }
+                    })
+                )
+            }
+            setImgs(new_rowImgs)
+        }
+    }
+}

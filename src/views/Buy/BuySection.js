@@ -1,17 +1,14 @@
 
 import { useEffect, useState } from "react";
-import { getFAPI, imgFAPI, postFAPI } from "../../libs/fastapi";
+import { getFAPI, getProductsImgs, postFAPI } from "../../libs/fastapi";
 
 import { Button, Input } from "@nextui-org/react";
 
-import { Form, Formik } from "formik";
-
 import BuyList from "./components/BuyList";
-
-import { IoSearch } from "react-icons/io5";
-
 import ProductsCards from "./components/ProductsCards";
 import PaginationCustom from "../../components/PaginationCustom";
+import InputSearch from "../../components/InputSearch";
+import ErrorBoundary from "../../components/ErrorBoundary";
 
 
 
@@ -20,6 +17,11 @@ function BuySection() {
         id_client: 1,
         name_client: "Consumidor Final",
         category_client: "3",
+    }
+    const no_client = {
+        id_client: '',
+        name_client: 'Sin datos',
+        category_client: 'Sin datos',
     }
 
     const [client, setClient] = useState(default_client)
@@ -35,26 +37,28 @@ function BuySection() {
         setLoading(true)
         if (e.id_client && e.id_client !== '') {
             const response = await getFAPI('clients/getById/' + e.id_client)
-            if (response.bool) {
-                if (response.value) {
-                    setClient(response.value)
-                } else {
-                    setClient({
-                        id_client: '',
-                        name_client: 'Sin datos',
-                        category_client: 'Sin datos',
-                    })
-                }
+            if (response.bool && typeof response.value[0] === 'object') {
+                setClient(response.value[0])
+            } else {
+                setClient(no_client)
             }
+        } else {
+            setClient(no_client)
         }
         setLoading(false)
     }
+
     const getAll = async () => {
         setLoading(true)
         const response = await getFAPI('products/getAll')
-        if (response.bool) setData(response.value)
+        if (response.bool && Array.isArray(response.value)) {
+            setData(response.value)
+        } else {
+            setData([])
+        }
         setLoading(false)
     }
+
     const handleAddProduct = (e) => {
         const new_list = { ...buyList }
 
@@ -62,7 +66,7 @@ function BuySection() {
             new_list[e.id_product] = {
                 ...buyList[e.id_product],
                 quantity: buyList[e.id_product].quantity + 1,
-                subtotal: (buyList[e.id_product].quantity + 1) * e.price,
+                subtotal: ((buyList[e.id_product].quantity + 1) * e.price).toFixed(2),
             }
         } else {
             new_list[e.id_product] = {
@@ -73,41 +77,6 @@ function BuySection() {
         }
 
         setBuyList(new_list)
-    }
-
-    const getImgs = async () => {
-        if (rows.length > 0) {
-            setLoading(true)
-
-            const form_data = new FormData()
-            rows.forEach(e => {
-                form_data.append('ids', e.id_product)
-            })
-
-            const response = await postFAPI('products/getListImgs', form_data)
-
-            if (response.bool) {
-                const new_rowImgs = {}
-                for (const id in response.value) {
-                    const list = response.value[id]
-
-                    new_rowImgs[id] = []
-
-                    await Promise.all(
-                        list.map(async name => {
-                            const src = await imgFAPI(`products/getImgByName/${id}/${name}`)
-                            new_rowImgs[id].push({
-                                name: name,
-                                src: src.value
-                            })
-                        })
-                    )
-                }
-                setRowsImgs(new_rowImgs)
-            }
-
-            setLoading(false)
-        }
     }
 
     const handleBuy = async () => {
@@ -198,7 +167,6 @@ function BuySection() {
         }
 
         setBuyList(new_list)
-
         setLoading(false)
     }
 
@@ -208,9 +176,19 @@ function BuySection() {
         getAll()
     }, [])
     useEffect(() => {
-        getImgs()
-        // eslint-disable-next-line
+        getProductsImgs(rows, setRowsImgs)
     }, [rows])
+    useEffect(() => {
+        if (noStock.length) {
+            const new_list = { ...buyList }
+            noStock.forEach(id => {
+                const product = data.filter(row => row.id_product === id)[0]
+                new_list[id].stock = product.stock
+            })
+            setBuyList(new_list)
+        }
+        // eslint-disable-next-line
+    }, [data])
 
 
 
@@ -218,51 +196,31 @@ function BuySection() {
         <section className="flex flex-col justify-center items-center">
 
             {/* client */}
-            <div className="flex max-sm:flex-col gap-2 items-center">
-                <Formik
-                    initialValues={{
-                        id_client: client.id_client,
-                    }}
-                    onSubmit={values => getClientById(values)}
-                >
-                    {({ handleChange }) => (
-                        <Form className="flex gap-4 items-center" >
-                            <Input
-                                type='number'
-                                name="id_client"
-                                label='ID Cliente'
-                                className="w-32"
-                                defaultValue={client.id_client}
-                                endContent={
-                                    <button type="submit" className="hover:text-warning" disabled={loading}>
-                                        <IoSearch size={28} />
-                                    </button>
-                                }
-                                onChange={handleChange}
-                            />
-                        </Form>
-                    )}
-                </Formik>
+            <InputSearch
+                name={'id_client'}
+                label={'ID Cliente'}
+                onSubmit={getClientById}
+                loading={loading}
+                default_values={{
+                    id_client: client.id_client,
+                }}
+            />
 
-                <div className="flex gap-2 max-sm:flex-col">
-                    <Input
-                        label='ID'
-                        className="hidden"
-                        value={client.id_client}
-                        readOnly
-                    />
-                    <Input
-                        label='Nombre'
-                        value={client.name_client}
-                        readOnly
-                    />
-                    <Input
-                        label='Categoria'
-                        value={client.category_client}
-                        readOnly
-                    />
-                </div>
+            <div className="flex gap-2 flex-wrap mt-2 items-center justify-center">
+                <Input
+                    label='Nombre'
+                    className="w-fit"
+                    value={client.name_client}
+                    readOnly
+                />
+                <Input
+                    label='Categoria'
+                    className="w-fit"
+                    value={client.category_client}
+                    readOnly
+                />
             </div>
+
 
             {/* ticket */}
             <BuyList
@@ -273,30 +231,31 @@ function BuySection() {
                 handleBuy={handleBuy}
                 rowImgs={rowImgs}
                 noStock={noStock}
+                setNoStock={setNoStock}
             />
 
-            <div className="flex gap-2">
-                <Button onClick={ticket_random} isDisabled={loading}>
-                    Compra Aleatoria
-                </Button>
-            </div>
+            <Button onClick={ticket_random} isDisabled={loading}>
+                Compra Aleatoria
+            </Button>
 
 
             {/* products list */}
-            <p className="text-neutral-500 text-center mt-4">Total: {data.length} productos</p>
-            <ProductsCards
-                products={rows}
-                productsImgs={rowImgs}
-                loading={loading}
-                handleAddProduct={handleAddProduct}
-            />
+            <ErrorBoundary>
+                <p className="text-neutral-500 text-center mt-4">Total: {data.length} productos</p>
 
+                <ProductsCards
+                    products={rows}
+                    productsImgs={rowImgs}
+                    loading={loading}
+                    handleAddProduct={handleAddProduct}
+                />
 
-            <PaginationCustom
-                data={data}
-                setRows={setRows}
-                className={"flex w-full justify-center mt-4"}
-            />
+                <PaginationCustom
+                    data={data}
+                    setRows={setRows}
+                    className={"flex w-full justify-center mt-4"}
+                />
+            </ErrorBoundary>
 
         </section>
     );

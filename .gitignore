@@ -25,5 +25,5 @@ yarn-error.log*
 /z
 
 /src/assets
-
-/src/components/Test.js
+/src/components/Plantilla.js
+/src/views/Testeo

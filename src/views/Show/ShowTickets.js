@@ -2,13 +2,12 @@ import { useState } from "react";
 
 import { deleteFAPI, getFAPI } from "../../libs/fastapi";
 
-import { Accordion, AccordionItem, Spinner, Button, Input } from "@nextui-org/react";
-
-import { Form, Formik } from "formik";
+import { Accordion, AccordionItem, Spinner, Button } from "@nextui-org/react";
+import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from "@nextui-org/react";
 
 import PaginationCustom from "../../components/PaginationCustom";
-
-import { IoSearch } from "react-icons/io5";
+import InputSearch from "../../components/InputSearch";
+import ErrorBoundary from "../../components/ErrorBoundary";
 
 
 function ShowTickets() {
@@ -36,38 +35,34 @@ function ShowTickets() {
         Sin resultados
     </div>
 
-    const tickets_header = <div className="flex justify-evenly bg-content2 p-2 rounded-lg text-sm w-full">
-        {columns.map(col =>
-            <div key={col.key} className="font-semibold w-full text-center">
-                {col.label}
-            </div>
-        )}
-    </div>
-
 
     const [data, setData] = useState([])
     const [rows, setRows] = useState([])
     const [loading, setLoading] = useState(false)
 
 
-    const getById = async (e) => {
+    const getData = async (e) => {
         setLoading(true)
-        if (e.id_ticket && e.id_ticket !== '') {
-            const response = await getFAPI('tickets/getById/' + e.id_ticket)
-            if (response.bool) setData(response.value)
+
+        var url = 'getAll'
+        if (typeof e === 'object' && e.id_ticket && e.id_ticket !== '') {
+            url = 'getById/' + e.id_ticket
         }
+
+        const response = await getFAPI('tickets/' + url)
+        if (response.bool && Array.isArray(response.value)) {
+            setData(response.value)
+        } else {
+            setData([])
+        }
+
         setLoading(false)
     }
-    const getAll = async () => {
-        setLoading(true)
-        const response = await getFAPI('tickets/getAll')
-        if (response.bool) setData(response.value)
-        setLoading(false)
-    }
+
     const cleanEmptyTickets = async () => {
         setLoading(true)
         await deleteFAPI('tickets/cleanEmptyTickets')
-        await getAll()
+        await getData()
         setLoading(false)
     }
     const deleteAll = async () => {
@@ -75,45 +70,53 @@ function ShowTickets() {
         if (confirm) {
             setLoading(true)
             await deleteFAPI('tickets/deleteAll')
-            await getAll()
+            await getData()
             setLoading(false)
         }
+    }
+
+    function SellsTable({id, rows}) {
+        return <Table
+            aria-label={"Tabla de ventas del tiket " + id}
+            selectionMode="single"
+            classNames={{
+                wrapper: 'border'
+            }}
+        >
+            <TableHeader columns={columns}>
+                {(column) => <TableColumn key={column.key}>{column.label}</TableColumn>}
+            </TableHeader>
+
+            <TableBody
+                emptyContent={"Sin resultados"}
+            >
+                {rows.map((row, i) =>
+                    <TableRow key={`${id}_row_${i}`}>
+                        {columns.map(col =>
+                            <TableCell key={`${id}_row_${i}_${col.key}`}>
+                                {row[col.key]}
+                            </TableCell>
+                        )}
+                    </TableRow>
+                )}
+            </TableBody>
+        </Table>
     }
 
 
 
     return (
-        <section>
+        <section className="flex flex-col items-center gap-2">
+
+            <InputSearch
+                name={'id_ticket'}
+                label={'ID Ticket'}
+                onSubmit={getData}
+                loading={loading}
+            />
+
+
             <div className="flex gap-3 items-center max-sm:justify-center flex-wrap px-2" >
-                <Formik
-                    initialValues={{
-                        id_ticket: false,
-                    }}
-                    onSubmit={values => getById(values)}
-                >
-                    {({ handleChange }) => (
-                        <Form className="flex gap-4 items-center" >
-                            <Input
-                                type='number'
-                                name="id_ticket"
-                                label='ID Ticket'
-                                size="sm"
-                                className="w-40"
-                                endContent={
-                                    <button type="submit" className="hover:text-warning" disabled={loading}>
-                                        <IoSearch size={28} />
-                                    </button>
-                                }
-                                onChange={handleChange}
-                            />
-                        </Form>
-                    )}
-                </Formik>
-
-                <Button onClick={getAll} isDisabled={loading}>
-                    Todos los tickets
-                </Button>
-
                 <Button onClick={cleanEmptyTickets} isDisabled={loading}>
                     Limpiar tickets vacios
                 </Button>
@@ -124,52 +127,38 @@ function ShowTickets() {
             </div>
 
 
-
             {loading
                 ? <Spinner className="mt-8" />
+                : <div className="max-w-[95vw] max-sm:overflow-x-scroll w-full mt-4">
+                    <p className="text-neutral-500 text-center">Total: {data.length} tickets</p>
 
-                : <div className="max-w-[95vw] max-sm:overflow-x-scroll w-full mt-8">
-                    {<p className="text-neutral-500 text-center">Total: {data.length} tickets</p>}
                     <div className=" flex flex-col gap-6 p-2 w-full min-w-[600px]">
                         {rows.length === 0
                             ? not_elemets
-                            : rows.map(e =>
-                                <Accordion key={e.id_ticket} isCompact variant="splitted" >
+                            : rows.map(ticket =>
+                                <Accordion key={ticket.id_ticket} isCompact variant="splitted" >
                                     <AccordionItem
                                         aria-label="Acordeon"
                                         title={<div className="flex justify-between">
                                             <p className="font-semibold">
-                                                ID Ticket: {e.id_ticket} - ID Cliente: {e.id_client}
+                                                ID Ticket: {ticket.id_ticket} - ID Cliente: {ticket.id_client}
                                             </p>
 
                                             <p className="text-neutral-500">
-                                                {e.date}
+                                                {ticket.date}
                                             </p>
                                         </div>}
                                         className="p-2"
                                     >
 
-                                        {e.sells.length === 0
+                                        {ticket.sells.length === 0
                                             ? not_elemets
-                                            : <div>
-                                                {tickets_header}
-
-                                                {e.sells.map((s, i) =>
-                                                    <div
-                                                        key={`${e.id_ticket}_row_${i}`}
-                                                        className="flex hover:bg-content2 p-1 rounded-lg"
-                                                    >
-                                                        {columns.map(col =>
-                                                            <div
-                                                                key={`${e.id_ticket}_row_${i}_${col.key}`}
-                                                                className="w-full text-center"
-                                                            >
-                                                                {s[col.key]}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
+                                            : <ErrorBoundary>
+                                                <SellsTable
+                                                    id={ticket.id_ticket}
+                                                    rows={ticket.sells}
+                                                />
+                                            </ErrorBoundary>
                                         }
                                     </AccordionItem>
                                 </Accordion>

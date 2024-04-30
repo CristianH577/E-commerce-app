@@ -1,5 +1,7 @@
-import { Pagination } from "@nextui-org/react"
+
 import { useEffect, useMemo, useState } from "react"
+
+import { Pagination } from "@nextui-org/react"
 
 
 function PaginationCustom({ data, setRows, className }) {
@@ -9,10 +11,14 @@ function PaginationCustom({ data, setRows, className }) {
     const pages = Math.ceil(data.length / rows_per_page)
 
     useMemo(() => {
-        const start = (page - 1) * rows_per_page
+        const start = (page - 1) * rows_per_page || 0
         const end = start + rows_per_page
 
-        setRows(data.slice(start, end))
+        if (Array.isArray(data)) {
+            setRows(data.slice(start, end))
+        } else {
+            setRows([])
+        }
         // eslint-disable-next-line
     }, [page, data])
 

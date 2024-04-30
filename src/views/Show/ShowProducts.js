@@ -1,26 +1,28 @@
 import { useEffect, useState } from "react";
 
-import { deleteFAPI, getFAPI, imgFAPI, postFAPI } from "../../libs/fastapi";
+import { deleteFAPI, getFAPI, getProductsImgs } from "../../libs/fastapi";
 
-import { Button, Image, Input, Link, ScrollShadow, Spinner } from "@nextui-org/react";
-import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from "@nextui-org/react";
-
-import { Form, Formik } from "formik";
+import { Button, Image, ScrollShadow } from "@nextui-org/react";
 
 import EditProduct from "./components/EditProduct";
+import InputSearch from "../../components/InputSearch";
+import TableCustom from "./components/TableCustom";
+import ErrorBoundary from "../../components/ErrorBoundary";
 
-import { IoSearch } from "react-icons/io5";
 import { MdDeleteOutline } from "react-icons/md";
 import { CiEdit } from "react-icons/ci";
 
 import product_unknown from '../../assets/imgs/product_unknown.svg'
-import PaginationCustom from "../../components/PaginationCustom";
 
 
 
 function ShowProducts() {
 
     const columns = [
+        {
+            key: "actions",
+            label: "",
+        },
         {
             key: "img",
             label: "",
@@ -53,18 +55,7 @@ function ShowProducts() {
             key: "date",
             label: "Actualizacion",
         },
-        {
-            key: "actions",
-            label: "",
-        },
     ]
-    const cells_className = {
-        '': '',
-        actions: 'flex gap-2 max-lg:flex-col',
-        price: 'min-w-12',
-        img: 'grid grid-cols-2 gap-2 min-w-16 justify-center max-w-[200px]',
-        description: 'max-h-24 min-w-52 max-w-96',
-    }
 
     const [data, setData] = useState([])
     const [rows, setRows] = useState([])
@@ -73,76 +64,41 @@ function ShowProducts() {
     const [loading, setLoading] = useState(false)
 
 
-    const getById = async (e) => {
+    const getData = async (e) => {
         setLoading(true)
-        if (e.id_product && e.id_product !== '') {
-            const response = await getFAPI('products/getById/' + e.id_product)
-            if (response.bool) {
-                if (response.value) {
-                    setData([response.value])
-                } else {
-                    setData([])
-                }
-            }
+
+        var url = 'getAll'
+        if (typeof e === 'object' && e.id_product && e.id_product !== '') {
+            url = 'getById/' + e.id_product
         }
-        setLoading(false)
-    }
 
-    const getAll = async () => {
-        setLoading(true)
-        const response = await getFAPI('products/getAll')
-        if (response.bool) setData(response.value)
-        setLoading(false)
-    }
-
-    const getImgs = async () => {
-        if (rows.length > 0) {
-            const form_data = new FormData()
-            rows.forEach(e => {
-                form_data.append('ids', e.id_product)
-            })
-
-            const response = await postFAPI('products/getListImgs', form_data)
-
-            if (response.bool) {
-                const new_rowImgs = {}
-                for (const id in response.value) {
-                    const list = response.value[id]
-
-                    new_rowImgs[id] = []
-
-                    await Promise.all(
-                        list.map(async name => {
-                            const src = await imgFAPI(`products/getImgByName/${id}/${name}`)
-                            new_rowImgs[id].push({
-                                name: name,
-                                src: src.value
-                            })
-                        })
-                    )
-                }
-
-                setRowsImgs(new_rowImgs)
-            }
+        const response = await getFAPI('products/' + url)
+        if (response.bool && Array.isArray(response.value)) {
+            setData(response.value)
+        } else {
+            setData([])
         }
+
+        setLoading(false)
     }
 
     const handleDelete = async id => {
         setLoading(true)
         await deleteFAPI('products/delete/' + id)
-        getAll()
+        getData()
         setLoading(false)
     }
 
-    const renderCell = (item, columnKey) => {
-        switch (columnKey) {
+    const renderCell = (item, key) => {
+        const val = item[key] || ''
+        switch (key) {
             case 'actions':
-                return <div className={cells_className.actions}>
+                return <div className='flex gap-2 flex-col'>
                     <Button
                         isIconOnly
                         className="bg-transparent hover:text-danger"
                         isDisabled={loading}
-                        onClick={() => handleDelete(item.id_product)}
+                        onClick={() => handleDelete(item.id_product || false)}
                     >
                         <MdDeleteOutline size={25} />
                     </Button>
@@ -150,170 +106,105 @@ function ShowProducts() {
                     <Button
                         isIconOnly
                         className="bg-transparent hover:text-primary "
-                        href="#update_product"
-                        as={Link}
                         onClick={() => {
                             if (!loading) {
                                 setEdit(false)
 
                                 setTimeout(() => {
                                     setEdit(item)
-                                }, 300)
+                                    document.getElementById("update_product").scrollIntoView()
+                                }, 100)
                             }
                         }}
                     >
                         <CiEdit size={25} />
                     </Button>
                 </div>
+
             case 'price':
-                return <div className={cells_className.price}>
-                    $ {item.price}
+                return <div className='min-w-12'>
+                    $ {val}
                 </div>
+
             case 'img':
-                var img = product_unknown
-                const imgs = rowImgs[item.id_product]
-                if (imgs) {
-                    if (imgs.length === 1) {
-                        img = imgs[0].src
-                    } else {
-                        img = false
-                    }
+                var imgs = rowImgs[item.id_product]
+                if (!imgs) {
+                    imgs = [{
+                        name: "desconocido",
+                        src: product_unknown
+                    }]
                 }
 
-                return <div className={cells_className.img}>
-                    {img
-                        ? <span className="col-span-2">
+                return <ScrollShadow orientation="horizontal" className='max-w-[200px] max-h-[200px] flex'>
+                    <div className="flex gap-2 p-2 ">
+                        {imgs.map((img, i) =>
                             <Image
-                                src={img}
-                                alt={'Imagen de ' + item.name_product}
-                                radius="none"
-                                removeWrapper
-                                className="w-full h-full object-cover"
+                                key={img.name}
+                                src={img.src}
+                                alt={'Imagen ' + (i + 1) + ' de ' + item.name_product}
+                                className="w-full h-full object-contain"
+                                classNames={{
+                                    wrapper: 'w-[150px] h-[150px] bg-content1'
+                                }}
                             />
-                        </span>
-                        : imgs.map((img, i) =>
-                            <span key={img.name} className="col-span-1">
-                                <Image
-                                    src={img.src}
-                                    alt={'Imagen ' + (i + 1) + ' de ' + item.name_product}
-                                    radius="none"
-                                    removeWrapper
-                                    className="w-full h-full object-cover"
-                                />
-                            </span>
-                        )
-                    }
-                </div>
-            case 'description':
-                return <ScrollShadow hideScrollBar className={cells_className.description}>
-                    {item.description}
+                        )}
+                    </div>
                 </ScrollShadow>
 
+            case 'description':
+                return <ScrollShadow hideScrollBar className='max-h-[170px] min-w-52 max-w-96 border-2 rounded-lg p-1'>
+                    {val}
+                </ScrollShadow>
 
             default:
-                return <div className={cells_className['']}>
-                    {item[columnKey]}
+                return <div>
+                    {val}
                 </div>
         }
     }
 
 
-
     useEffect(() => {
-        getImgs()
+        getProductsImgs(rows, setRowsImgs)
         // eslint-disable-next-line
     }, [rows])
-
 
 
     return (
         <section className="flex flex-col items-center">
 
-            <div className="flex gap-4 items-center justify-center max-sm:flex-col" >
-                <Formik
-                    initialValues={{
-                        id_product: false,
-                    }}
-                    onSubmit={values => getById(values)}
-                >
-                    {({ handleChange }) => (
-                        <Form className="flex gap-4 items-center" >
-                            <Input
-                                type='number'
-                                name="id_product"
-                                label='ID Producto'
-                                size="sm"
-                                className="w-40"
-                                endContent={
-                                    <button type="submit" className="hover:text-warning" disabled={loading}>
-                                        <IoSearch size={28} />
-                                    </button>
-                                }
-                                onChange={handleChange}
-                            />
-                        </Form>
-                    )}
-                </Formik>
+            <InputSearch
+                name={'id_product'}
+                label={'ID Producto'}
+                onSubmit={getData}
+                loading={loading}
+            />
 
-                <Button onClick={getAll} isDisabled={loading}>
-                    Todos los productos
-                </Button>
-            </div>
-
-
-            <div id="update_product">
+            <div id="update_product" >
                 {edit && (
                     <EditProduct
-                        product={edit}
-                        setProduct={setEdit}
-                        imgs_current={rowImgs[edit.id_product]}
-                        handleEndEdit={getAll}
+                        edit={edit}
+                        setEdit={setEdit}
+                        imgs_current={rowImgs[edit.id_product] || []}
+                        handleEndEdit={getData}
                         loading={loading}
                         setLoading={setLoading}
                     />
                 )}
             </div>
 
-
-            {loading
-                ? <Spinner className="mt-8" />
-                :
-                <Table
-                    aria-label="Tabla de productos"
-                    className="mt-8 max-w-[95vw]"
-                    selectionMode="single"
-                    topContent={<p className="text-neutral-500">Total: {data.length} productos</p>}
-                    bottomContent={
-                        <PaginationCustom
-                            data={data}
-                            setRows={setRows}
-                            className={"flex justify-center mt-4 w-fit sm:w-full"}
-                        />
-                    }
-                >
-                    <TableHeader columns={columns}>
-                        {(column) => <TableColumn key={column.key}>{column.label}</TableColumn>}
-                    </TableHeader>
-
-                    <TableBody
-                        items={rows}
-                        emptyContent={"Sin resultados"}
-                        isLoading={loading}
-                        loadingContent={<Spinner label="Loading..." />}
-                    >
-                        {rows.map(row =>
-                            <TableRow key={row.id_product}>
-                                {columns.map(col =>
-                                    <TableCell key={`${row.id_product}_${col.key}`}>
-                                        {renderCell(row, col.key)}
-                                    </TableCell>
-                                )}
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            }
-
+            <ErrorBoundary>
+                <TableCustom
+                    label={'productos'}
+                    data={data}
+                    columns={columns}
+                    rows={rows}
+                    setRows={setRows}
+                    id_row={'id_product'}
+                    renderCell={renderCell}
+                    loading={loading}
+                />
+            </ErrorBoundary>
 
         </section>
     );

@@ -12,81 +12,116 @@ import BuySection from "./views/Buy/BuySection";
 import ShowTickets from "./views/Show/ShowTickets";
 import ShowSells from "./views/Show/ShowSells";
 import Stats from "./views/Stats/Stats";
+// import Testeo from "./views/Testeo/Testeo";
 
 
 function App() {
 
+  const tabs = [{
+    aria_label: "secciones principales",
+    tabs_list: [
+      {
+        key: "add",
+        title: "Agregar",
+        aria_label: "secciones de agregar",
+        tabs_list: [
+          {
+            key: "add_product",
+            title: "Producto",
+            content: <AddProduct />
+          },
+          {
+            key: "add_client",
+            title: "Cliente",
+            content: <AddClient />
+          }
+        ]
+      },
+      {
+        key: "show",
+        title: "Mostrar",
+        aria_label: "secciones de mostrar",
+        tabs_list: [
+          {
+            key: "show_products",
+            title: "Productos",
+            content: <ShowProducts />
+          },
+          {
+            key: "add_client",
+            title: "Clientes",
+            content: <ShowClients />
+          },
+          {
+            key: "tickets",
+            title: "Tickets",
+            content: <ShowTickets />
+          },
+          {
+            key: "sells",
+            title: "Ventas",
+            content: <ShowSells />
+          }
+        ]
+      },
+      
+      {
+        key: "buy",
+        title: "Comprar",
+        aria_label: "seccion de comprar",
+        content: <BuySection />
+      },
+
+      {
+        key: "stats",
+        title: "Estadisticas",
+        aria_label: "seccion de estadisticas",
+        content: <Stats />
+      },
+
+      // {
+      //   key: "testeo",
+      //   title: "Testeo",
+      //   aria_label: "seccion de testeo",
+      //   content: <Testeo />
+      // },
+    ]
+  }]
+
+  const CheckTab = tab => {
+    if (tab.content) {
+      return tab.content
+    } else if (tab.tabs_list) {
+      return MakeTabs(tab)
+    }
+
+    return null
+  }
+  const MakeTabs = tab => {
+    return <Tabs
+      aria-label={tab.aria_label}
+      classNames={{
+        tabList: "flex-wrap justify-center",
+        tab: "w-auto",
+        panel: "max-w-screen"
+      }}
+    >
+      {tab.tabs_list.map(tab =>
+        <Tab key={tab.key} title={tab.title} className="flex flex-col justify-center items-center">
+          {CheckTab(tab)}
+        </Tab>
+      )}
+    </Tabs>
+
+  }
+
+
   return (
     <main className="flex flex-col justify-center items-center p-2" >
 
-      <Tabs
-        aria-label="Secciones"
-        classNames={{
-          tabList: "flex-wrap justify-center",
-          tab: "w-auto",
-          panel: "max-w-screen"
-        }}
-      >
-
-        <Tab key="add" title="Agregar" className="flex flex-col justify-center items-center">
-          <Tabs
-            aria-label="Agregar"
-            classNames={{
-              tabList: "flex-wrap justify-center",
-              tab: "w-auto",
-              panel: "max-w-screen"
-            }}
-          >
-            <Tab key="add_product" title="Agregar producto">
-              <AddProduct />
-            </Tab>
-
-            <Tab key="add_client" title="Agregar cliente">
-              <AddClient />
-            </Tab>
-          </Tabs>
-        </Tab>
-
-
-        <Tab key="show" title="Mostrar" className="flex flex-col justify-center items-center">
-          <Tabs
-            aria-label="items"
-            classNames={{
-              tabList: "flex-wrap justify-center",
-              tab: "w-auto",
-              panel: "max-w-screen"
-            }}
-          >
-            <Tab key="show_products" title="Productos" className="">
-              <ShowProducts />
-            </Tab>
-
-            <Tab key="show_clients" title="Clientes">
-              <ShowClients />
-            </Tab>
-
-            <Tab key="tickets" title="Tickets">
-              <ShowTickets />
-            </Tab>
-
-            <Tab key="sells" title="Ventas">
-              <ShowSells />
-            </Tab>
-          </Tabs>
-        </Tab>
-
-
-        <Tab key="buy" title="Comprar" >
-          <BuySection />
-        </Tab>
-
-
-        <Tab key="stats" title="Estadisticas" >
-          <Stats />
-        </Tab>
-
-
-      </Tabs>
+      {tabs.map(tab =>
+        CheckTab(tab)
+      )}
 
       <ToastContainer />
 

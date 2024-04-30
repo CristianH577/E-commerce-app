@@ -14,6 +14,7 @@ function AddClient() {
     const category_list = ["1", "2", "3"]
 
     const [loading, setLoading] = useState(false)
+    const [select, setSelect] = useState([])
 
     const handleSubmit = async (e) => {
         setLoading(true)
@@ -24,6 +25,7 @@ function AddClient() {
 
     const handleReset = () => {
         document.querySelector('#form_add_client').reset()
+        setSelect([])
     }
 
     const addExamples = async () => {
@@ -38,7 +40,7 @@ function AddClient() {
         <Formik
             initialValues={{
                 name_client: '',
-                category_client: '',
+                category_client: 3,
             }}
             onSubmit={values => handleSubmit(values)}
             onReset={handleReset}
@@ -55,6 +57,8 @@ function AddClient() {
                         name="category_client"
                         label='Categoria'
                         onChange={handleChange}
+                        selectedKeys={select}
+                        onSelectionChange={setSelect}
                     >
                         {category_list.map(e =>
                             <SelectItem key={e} value={e} className="capitalize">
