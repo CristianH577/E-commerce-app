@@ -13,7 +13,7 @@ import { CiEdit } from "react-icons/ci";
 
 
 
-function ShowProducts() {
+function ShowClients() {
 
     const columns = [
         {
@@ -53,6 +53,7 @@ function ShowProducts() {
         }
 
         const response = await getFAPI('clients/' + url)
+        console.log(response)
         if (response.bool && Array.isArray(response.value)) {
             setData(response.value)
         } else {
@@ -207,4 +208,4 @@ function ShowProducts() {
     );
 }
 
-export default ShowProducts;
+export default ShowClients;

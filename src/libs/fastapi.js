@@ -20,6 +20,7 @@ var alert = { ...defaultAlert }
 const analyzeResponse = (response) => {
     // console.log(response)
     if (response) {
+        alert.msg = false
         alert.status = response.status
 
         if (alert.status >= 200 && alert.status < 300) alert.bool = true
@@ -41,16 +42,22 @@ const analyzeResponse = (response) => {
 }
 const analyzeError = (e) => {
     // console.log(e)
-    if (e.code === "ERR_NETWORK") {
+
+    if (["ERR_NETWORK", "ERR_BAD_RESPONSE"].includes(e.code)) {
         alert.status = 500
-        alert.msg = "Error de servidor"
     } else if (e.code === "ERR_BAD_REQUEST") {
         alert.status = e.response.request.status
     }
 
     if (alert.status) {
-        alert.variant = 'danger'
-        if (alert.status < 500) alert.msg = e?.response?.data?.detail
+        alert.variant = 'error'
+        alert.msg = false
+
+        if (alert.status < 500) {
+            alert.msg = e?.response?.data?.detail
+        } else {
+            alert.msg = "Error de servidor"
+        }
     }
 
     if (alert.msg) showAlert()
@@ -59,7 +66,7 @@ const analyzeError = (e) => {
 
 const showAlert = async () => {
     const toast_config = {
-        position: "top-right",
+        position: "bottom-right",
         autoClose: 5000,
         hideProgressBar: false,
         newestOnTop: false,
@@ -68,26 +75,10 @@ const showAlert = async () => {
         pauseOnFocusLoss: true,
         draggable: true,
         pauseOnHover: true,
+        type: alert.variant
     }
 
-    switch (alert.variant) {
-        case 'info':
-            toast.info(alert.msg, toast_config)
-            break;
-        case 'success':
-            toast.success(alert.msg, toast_config)
-            break;
-        case 'warning':
-            toast.warning(alert.msg, toast_config)
-            break;
-        case 'danger':
-            toast.error(alert.msg, toast_config)
-            break;
-
-        default:
-            toast(alert.msg, toast_config)
-            break;
-    }
+    toast(alert.msg, toast_config)
 }
 
 
@@ -147,7 +138,17 @@ export async function imgFAPI(action) {
             alert.bool = true
             alert.value = url
         })
-        .catch(e => analyzeError(e))
+        .catch(e => {
+            if (e?.response?.data) {
+                var reader = new FileReader()
+                reader.onload = function (x) {
+                    const texto = x.target.result
+                    e.response.data = JSON.parse(texto)
+                    analyzeError(e)
+                }
+                reader.readAsText(e.response.data)
+            }
+        })
 
     return alert
 }

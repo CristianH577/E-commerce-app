@@ -1,5 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+.gitignore
+
 # dependencies
 /node_modules
 /.pnp
@@ -23,10 +25,9 @@ yarn-debug.log*
 yarn-error.log*
 
 
-.gitignore
 /z
 hacer.txt
 
 /src/assets
 /src/components/Plantilla.js
-/src/views/Testeo
+/src/views/Test

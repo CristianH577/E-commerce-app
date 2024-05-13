@@ -11,8 +11,8 @@ import 'swiper/css/mousewheel';
 
 import { MdAddShoppingCart } from "react-icons/md";
 
-import product_unknown from '../../../assets/imgs/product_unknown.svg'
 import unit_value from '../../../assets/files/unit_values.json'
+import { ProductUnknown } from '../../../assets/icons'
 
 
 function ProductsCards({ products, productsImgs, loading, handleAddProduct }) {
@@ -25,7 +25,7 @@ function ProductsCards({ products, productsImgs, loading, handleAddProduct }) {
                     key={e.id_product}
                     className="w-sreen xs:w-[230px] sm:min-h-[420px] xl:w-[350px] xl:h-[600px]"
                 >
-                    <CardHeader className="overflow-visible p-2 flex justify-center w-full">
+                    <CardHeader className="overflow-visible p-2 flex justify-center w-full ">
                         {productsImgs[e.id_product]
                             ? <Swiper
                                 spaceBetween={1}
@@ -41,16 +41,15 @@ function ProductsCards({ products, productsImgs, loading, handleAddProduct }) {
                                             src={img.src}
                                             alt={'Imagen de ' + e.name_product}
                                             removeWrapper
-                                            className="object-cover w-full"
+                                            className="object-cover w-full bg-background"
                                         />
                                     </SwiperSlide>
                                 )}
                             </Swiper>
 
-                            : <Image
-                                src={product_unknown}
+                            : <ProductUnknown
                                 alt={'Imagen de ' + e.name_product}
-                                className="max-xs:h-40 xs:h-40 xl:h-64"
+                                className="max-xs:h-40 xs:h-40 xl:h-64 w-full"
                             />
                         }
                     </CardHeader>
@@ -58,7 +57,7 @@ function ProductsCards({ products, productsImgs, loading, handleAddProduct }) {
                     <CardBody className="gap-4 pb-0">
                         <div className="flex flex-col items-center text-lg gap-1">
                             <p className="capitalize break-all font-semibold text-center">
-                                {e.name_product} {e.id_product}
+                                {e.name_product} 
                             </p>
 
                             <span className="rounded-full bg-content3 px-4 w-20 h-20 flex flex-col items-center justify-center">

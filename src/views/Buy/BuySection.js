@@ -82,7 +82,7 @@ function BuySection() {
     const handleBuy = async () => {
         setLoading(true)
 
-        if (client.id_client) {
+        if (client.id_client && data.length > 0) {
             const list = Object.values(buyList)
 
             if (list.length > 0) {
@@ -90,10 +90,10 @@ function BuySection() {
 
                 list.forEach(e => {
                     const sell = {
-                        id_ticket: 0,
                         id_product: e.id_product,
                         name_product: e.name_product,
-                        quantity: e.quantity
+                        quantity: e.quantity,
+                        subtotal: e.subtotal
                     }
 
                     sells.push(sell)
@@ -104,16 +104,17 @@ function BuySection() {
                     if (check.value) {
                         setNoStock(check.value)
                     } else {
-                        const addTicket = await postFAPI('/tickets/add', { id_client: client.id_client })
-
-                        if (addTicket.bool && addTicket.value) {
-                            sells.forEach(sell => sell.id_ticket = addTicket.value)
-
-                            await postFAPI('/sells/addSells', sells)
+                        const data = {
+                            id_client: client.id_client,
+                            sells: sells
                         }
+                        console.log(data)
+                        const add_ticket = await postFAPI('/tickets/add', data)
 
-                        setBuyList({})
-                        setClient(default_client)
+                        if (add_ticket.bool) {
+                            setBuyList({})
+                            setClient(default_client)
+                        }
                     }
                 }
             }

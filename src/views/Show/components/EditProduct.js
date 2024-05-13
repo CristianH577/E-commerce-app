@@ -78,8 +78,6 @@ function EditProduct({ edit, setEdit, loading, setLoading, imgs_current, handleE
         document.querySelector('#input_imgs').value = ''
 
         setEdit && setEdit(false)
-
-        if (window.location.hash) window.location.hash = ""
     }
 
     const handleUpdate = async e => {

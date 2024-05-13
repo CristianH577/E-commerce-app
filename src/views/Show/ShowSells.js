@@ -5,7 +5,7 @@ import { Button } from "@nextui-org/react";
 
 import InputSearch from "../../components/InputSearch";
 import TableCustom from "./components/TableCustom";
-import ErrorBoundary from "../../components/ErrorBoundary";
+import ErrorBoundary from "../../components/ErrorBoundary"
 
 import unit_values from '../../assets/files/unit_values.json'
 
@@ -31,6 +31,10 @@ function ShowSells() {
         {
             key: "quantity",
             label: "Cantidad",
+        },
+        {
+            key: "subtotal",
+            label: "Subtotal",
         },
     ]
 
@@ -65,7 +69,7 @@ function ShowSells() {
         setLoading(false)
     }
     const renderCell = (item, key) => {
-        const val = item[key] || ''
+        const val = item[key] || '-'
         switch (key) {
             case 'quantity':
                 const rule = unit_values[item.category_product] || unit_values.default
@@ -73,16 +77,14 @@ function ShowSells() {
                 if (quantity % 1 !== 0) quantity = quantity.toFixed(1)
                 const unit = rule.unit
 
-                return <p>
-                    {quantity + unit}
-                </p>
+                return quantity + unit
+
+            case 'subtotal':
+                return '$' + val
 
             default:
-                return <p>
-                    {val}
-                </p>
+                return val
         }
-
     }
 
 

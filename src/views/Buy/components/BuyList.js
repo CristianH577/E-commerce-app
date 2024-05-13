@@ -5,8 +5,8 @@ import { Button, Image, Input, Tooltip } from "@nextui-org/react";
 import { FaMinus, FaPlus } from "react-icons/fa";
 import { MdDeleteOutline } from "react-icons/md";
 
-import product_unknown from '../../../assets/imgs/product_unknown.svg'
 import unit_values from '../../../assets/files/unit_values.json'
+import { ProductUnknown } from '../../../assets/icons'
 
 
 function BuyList({ buyList, setBuyList, client, loading, rowImgs, handleBuy, noStock, setNoStock }) {
@@ -138,14 +138,20 @@ function BuyList({ buyList, setBuyList, client, loading, rowImgs, handleBuy, noS
                 </div>
             case 'img':
                 return <div className="flex justify-center">
-                    <span className="w-8 h-8">
-                        <Image
-                            src={rowImgs[item.id_product] ? rowImgs[item.id_product][0].src : product_unknown}
-                            alt={'Imagen de ' + item.name_product}
-                            radius="none"
-                            removeWrapper
-                            className="w-full h-full object-cover"
-                        />
+                    <span className="w-8 h-8 flex items-center">
+                        {rowImgs[item.id_product]
+                            ? <Image
+                                src={rowImgs[item.id_product][0].src}
+                                alt={'Imagen de ' + item.name_product}
+                                radius="none"
+                                removeWrapper
+                                className="w-full h-full object-cover"
+                            />
+                            : <ProductUnknown
+                                alt={'Imagen de ' + item.name_product}
+                                className="w-full"
+                            />
+                        }
                     </span>
                 </div>
 

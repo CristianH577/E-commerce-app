@@ -7,7 +7,9 @@ import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from 
 
 import PaginationCustom from "../../components/PaginationCustom";
 import InputSearch from "../../components/InputSearch";
-import ErrorBoundary from "../../components/ErrorBoundary";
+import ErrorBoundary from "../../components/ErrorBoundary"
+
+import unit_values from '../../assets/files/unit_values.json'
 
 
 function ShowTickets() {
@@ -28,6 +30,10 @@ function ShowTickets() {
         {
             key: "quantity",
             label: "Cantidad",
+        },
+        {
+            key: "subtotal",
+            label: "Subtotal",
         },
     ]
 
@@ -75,7 +81,26 @@ function ShowTickets() {
         }
     }
 
-    function SellsTable({id, rows}) {
+    const renderCell = (item, key) => {
+        const val = item[key] || '-'
+        switch (key) {
+            case 'quantity':
+                const rule = unit_values[item.category_product] || unit_values.default
+                var quantity = (item.quantity * rule.quantity_value)
+                if (quantity % 1 !== 0) quantity = quantity.toFixed(1)
+                const unit = rule.unit
+
+                return quantity + unit
+
+            case 'subtotal':
+                return '$' + val
+
+            default:
+                return val
+        }
+    }
+
+    function SellsTable({ id, rows, total }) {
         return <Table
             aria-label={"Tabla de ventas del tiket " + id}
             selectionMode="single"
@@ -94,7 +119,7 @@ function ShowTickets() {
                     <TableRow key={`${id}_row_${i}`}>
                         {columns.map(col =>
                             <TableCell key={`${id}_row_${i}_${col.key}`}>
-                                {row[col.key]}
+                                {renderCell(row, col.key)}
                             </TableCell>
                         )}
                     </TableRow>
@@ -157,7 +182,12 @@ function ShowTickets() {
                                                 <SellsTable
                                                     id={ticket.id_ticket}
                                                     rows={ticket.sells}
+                                                    total={ticket.total}
                                                 />
+                                                <div className="mt-2 me-8 text-end">
+                                                    <b>Total: </b>
+                                                    ${ticket.total}
+                                                </div>
                                             </ErrorBoundary>
                                         }
                                     </AccordionItem>

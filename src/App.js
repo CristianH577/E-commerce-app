@@ -11,8 +11,9 @@ import ShowClients from "./views/Show/ShowClients";
 import BuySection from "./views/Buy/BuySection";
 import ShowTickets from "./views/Show/ShowTickets";
 import ShowSells from "./views/Show/ShowSells";
+import ShowHistory from "./views/Show/ShowHistory";
 import Stats from "./views/Stats/Stats";
-// import Testeo from "./views/Testeo/Testeo";
+import Test from "./views/Test/Test";
 
 
 function App() {
@@ -61,10 +62,15 @@ function App() {
             key: "sells",
             title: "Ventas",
             content: <ShowSells />
+          },
+          {
+            key: "history",
+            title: "Historial",
+            content: <ShowHistory />
           }
         ]
       },
-      
+
       {
         key: "buy",
         title: "Comprar",
@@ -79,12 +85,12 @@ function App() {
         content: <Stats />
       },
 
-      // {
-      //   key: "testeo",
-      //   title: "Testeo",
-      //   aria_label: "seccion de testeo",
-      //   content: <Testeo />
-      // },
+      {
+        key: "test",
+        title: "Test",
+        aria_label: "seccion de test",
+        content: <Test />
+      },
     ]
   }]
 
@@ -117,10 +123,12 @@ function App() {
 
 
   return (
-    <main className="flex flex-col justify-center items-center p-2" >
+    <main className="flex flex-col justify-center items-center p-2 " >
 
-      {tabs.map(tab =>
-        CheckTab(tab)
+      {tabs.map((tab, i) =>
+        <div key={'tab_main_' + i} className="flex flex-col justify-center items-center">
+          {CheckTab(tab)}
+        </div>
       )}
 
       <ToastContainer />

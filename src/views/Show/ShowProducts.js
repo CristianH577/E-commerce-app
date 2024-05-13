@@ -11,8 +11,7 @@ import ErrorBoundary from "../../components/ErrorBoundary";
 
 import { MdDeleteOutline } from "react-icons/md";
 import { CiEdit } from "react-icons/ci";
-
-import product_unknown from '../../assets/imgs/product_unknown.svg'
+import { ProductUnknown } from '../../assets/icons'
 
 
 
@@ -127,35 +126,36 @@ function ShowProducts() {
                 </div>
 
             case 'img':
-                var imgs = rowImgs[item.id_product]
-                if (!imgs) {
-                    imgs = [{
-                        name: "desconocido",
-                        src: product_unknown
-                    }]
-                }
-
                 return <ScrollShadow orientation="horizontal" className='max-w-[200px] max-h-[200px] flex'>
                     <div className="flex gap-2 p-2 ">
-                        {imgs.map((img, i) =>
-                            <Image
-                                key={img.name}
-                                src={img.src}
-                                alt={'Imagen ' + (i + 1) + ' de ' + item.name_product}
-                                className="w-full h-full object-contain"
-                                classNames={{
-                                    wrapper: 'w-[150px] h-[150px] bg-content1'
-                                }}
+                        {rowImgs[item.id_product]
+                            ? rowImgs[item.id_product].map((img, i) =>
+                                <Image
+                                    key={img.name}
+                                    src={img.src}
+                                    alt={'Imagen ' + (i + 1) + ' de ' + item.name_product}
+                                    className="w-full h-full object-contain"
+                                    classNames={{
+                                        wrapper: 'w-[150px] h-[150px] bg-content1'
+                                    }}
+                                />
+                            )
+                            : <ProductUnknown
+                                alt={'Imagen de ' + item.name_product}
+                                className="w-[150px] h-[150px] "
                             />
-                        )}
+                        }
                     </div>
                 </ScrollShadow>
 
             case 'description':
-                return <ScrollShadow hideScrollBar className='max-h-[170px] min-w-52 max-w-96 border-2 rounded-lg p-1'>
-                    {val}
-                </ScrollShadow>
-
+                if (val === '') {
+                    return ''
+                } else {
+                    return <ScrollShadow hideScrollBar className='max-h-[170px] min-w-52 max-w-96 border-2 rounded-lg p-1'>
+                        {val}
+                    </ScrollShadow >
+                }
             default:
                 return <div>
                     {val}
